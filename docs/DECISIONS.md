@@ -146,7 +146,7 @@ TypeScript 5.9.3 выбран вместо 7.0.2, потому что `eslint-co
 
 ## Деплой и передача
 
-- Vercel, Node 22.x; локально допустим 24.
+- Vercel, Node 26.x; локально допустим Node ≥22.
 - Cron `/api/cron/deadlines`: `0 6 * * *` UTC = 09:00 МСК, `CRON_SECRET`.
 - Домен: apex `neyrocontent.ru`; fallback `neyrocontent.vercel.app`.
 - Один владелец на инсталляцию. Передача: репозиторий + Vercel + Supabase +

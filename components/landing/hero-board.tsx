@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  useRef,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
+import { Activity, MapPin, Users } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
 const columns = [
@@ -54,14 +60,76 @@ const pins = [
   { left: "78%", top: "24%", color: "#f472b6", delay: 1.4 },
 ];
 
+const cubeFaces = [
+  "front",
+  "back",
+  "right",
+  "left",
+  "top",
+  "bottom",
+] as const;
+
+function GlassCube({ size, z }: { size: number; z: number }) {
+  return (
+    <div
+      className="nf-cube-scene"
+      style={{ width: size, height: size } as CSSProperties}
+    >
+      <div
+        className="nf-cube"
+        style={{ "--cube-z": `${z}px` } as CSSProperties}
+      >
+        {cubeFaces.map((face) => (
+          <div key={face} className={`nf-cube__face nf-cube__face--${face}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function HeroBoard() {
   const reduce = useReducedMotion();
+  const sceneRef = useRef<HTMLDivElement>(null);
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (reduce || event.pointerType === "touch") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = Math.max(
+      -0.5,
+      Math.min(0.5, (event.clientX - rect.left) / rect.width - 0.5),
+    );
+    const y = Math.max(
+      -0.5,
+      Math.min(0.5, (event.clientY - rect.top) / rect.height - 0.5),
+    );
+    sceneRef.current?.style.setProperty("--px", `${x * 24}px`);
+    sceneRef.current?.style.setProperty("--py", `${y * 24}px`);
+  }
+
+  function resetParallax() {
+    sceneRef.current?.style.setProperty("--px", "0px");
+    sceneRef.current?.style.setProperty("--py", "0px");
+  }
 
   return (
-    <div className="relative mx-auto w-full max-w-2xl" aria-hidden="true">
+    <div
+      ref={sceneRef}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={resetParallax}
+      className="nf-scene relative mx-auto w-full max-w-2xl"
+      aria-hidden="true"
+    >
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="nf-floor absolute inset-x-[-30%] -bottom-24 h-[58%] opacity-40" />
+        <div className="nf-floor-glow absolute inset-x-0 -bottom-8 h-44 opacity-70" />
+        <div className="nf-ring absolute left-1/2 top-1/2 size-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+        <div className="nf-ring nf-ring--violet absolute left-1/2 top-1/2 size-[390px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+      </div>
+
       <div className="pointer-events-none absolute -inset-12 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.18),transparent_60%)] blur-3xl" />
 
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-[0_40px_120px_-45px_rgba(34,211,238,0.55)] backdrop-blur-xl [perspective:1400px]">
+      <div className="nf-parallax-board relative z-10">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-[0_40px_120px_-45px_rgba(34,211,238,0.55)] backdrop-blur-xl [perspective:1400px]">
         <motion.div
           animate={reduce ? undefined : { y: [0, -10, 0] }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
@@ -114,7 +182,7 @@ export function HeroBoard() {
         {pins.map((pin) => (
           <motion.div
             key={`${pin.left}-${pin.top}`}
-            className="absolute size-3 rounded-full border-2 border-slate-950"
+            className="absolute z-30 size-3 rounded-full border-2 border-slate-950"
             style={{
               left: pin.left,
               top: pin.top,
@@ -134,6 +202,83 @@ export function HeroBoard() {
             }}
           />
         ))}
+        </div>
+      </div>
+
+      <div className="nf-parallax-1 pointer-events-none absolute -left-8 top-12 z-20 hidden w-40 sm:block">
+        <div className="nf-float" style={{ animationDelay: "0.4s" }}>
+          <div className="rounded-2xl border border-white/15 bg-slate-950/70 p-3 shadow-[0_18px_60px_-20px_rgba(34,211,238,0.45)] backdrop-blur-xl [transform:rotateY(10deg)_rotateX(4deg)]">
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.22em] text-cyan-300/80">
+              <Users className="size-3" /> Client portal
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-100">
+              3 проекта
+            </p>
+            <div className="mt-2 flex gap-1">
+              {["#22d3ee", "#8b5cf6", "#f472b6"].map((color) => (
+                <span
+                  key={color}
+                  className="size-1.5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+            <p className="mt-1.5 text-[10px] text-slate-400">
+              2 клиента онлайн
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="nf-parallax-2 pointer-events-none absolute -right-8 top-1/3 z-20 hidden w-40 md:block">
+        <div
+          className="nf-float nf-float--slow"
+          style={{ animationDelay: "-1.2s" }}
+        >
+          <div className="rounded-2xl border border-white/15 bg-slate-950/70 p-3 shadow-[0_18px_60px_-20px_rgba(139,92,246,0.45)] backdrop-blur-xl [transform:rotateY(-12deg)_rotateX(2deg)]">
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.22em] text-violet-300/80">
+              <MapPin className="size-3" /> Pins
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-100">
+              12 правок
+            </p>
+            <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400">
+              <span className="size-1.5 rounded-full bg-cyan-300" />
+              прямо на макетах
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="nf-parallax-1 pointer-events-none absolute -left-4 -bottom-8 z-20 hidden w-36 lg:block">
+        <div className="nf-float nf-float--slow">
+          <div className="rounded-2xl border border-white/15 bg-slate-950/70 p-3 shadow-[0_18px_60px_-20px_rgba(34,211,238,0.35)] backdrop-blur-xl [transform:rotateY(8deg)_rotateX(-3deg)]">
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.22em] text-emerald-300/80">
+              <Activity className="size-3" /> Live board
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-100">
+              6 колонок
+            </p>
+            <p className="mt-1.5 text-[10px] text-slate-400">
+              синхронизация включена
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="nf-parallax-2 pointer-events-none absolute -right-3 -top-12 z-20 hidden md:block">
+        <div
+          className="nf-float nf-float--slow"
+          style={{ animationDelay: "-2.2s" }}
+        >
+          <GlassCube size={34} z={17} />
+        </div>
+      </div>
+
+      <div className="nf-parallax-1 pointer-events-none absolute -left-10 bottom-28 z-0 hidden lg:block">
+        <div className="nf-float">
+          <GlassCube size={22} z={11} />
+        </div>
       </div>
     </div>
   );

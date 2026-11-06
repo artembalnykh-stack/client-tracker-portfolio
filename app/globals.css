@@ -151,3 +151,177 @@
     }
   }
 }
+
+/* Landing CSS-3D layer (no WebGL) */
+.nf-scene {
+  --px: 0px;
+  --py: 0px;
+  isolation: isolate;
+}
+
+.nf-parallax-1 {
+  transform: translate3d(
+    calc(var(--px) * 0.5),
+    calc(var(--py) * 0.5),
+    0
+  );
+  transition: transform 240ms ease-out;
+}
+
+.nf-parallax-2 {
+  transform: translate3d(
+    calc(var(--px) * -0.3),
+    calc(var(--py) * -0.3),
+    0
+  );
+  transition: transform 240ms ease-out;
+}
+
+.nf-parallax-board {
+  transform: translate3d(
+    calc(var(--px) * 0.28),
+    calc(var(--py) * 0.28),
+    0
+  );
+  transition: transform 240ms ease-out;
+}
+
+.nf-floor {
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.16) 1px, transparent 1px);
+  background-size: 42px 42px;
+  transform: perspective(650px) rotateX(64deg) scale(1.55);
+  transform-origin: top center;
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 78%);
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
+
+.nf-floor-glow {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(34, 211, 238, 0.22),
+    rgba(139, 92, 246, 0.1) 40%,
+    transparent 70%
+  );
+  filter: blur(18px);
+}
+
+.nf-ring {
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  box-shadow:
+    0 0 60px rgba(34, 211, 238, 0.08),
+    inset 0 0 60px rgba(139, 92, 246, 0.06);
+  animation: nf-ring-pulse 9s ease-in-out infinite;
+}
+
+.nf-ring--violet {
+  border-color: rgba(139, 92, 246, 0.16);
+  animation-delay: -3s;
+}
+
+.nf-float {
+  animation: nf-float 7s ease-in-out infinite;
+}
+
+.nf-float--slow {
+  animation-duration: 10s;
+  animation-delay: -2s;
+}
+
+.nf-cube-scene {
+  perspective: 420px;
+}
+
+.nf-cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: nf-cube-turn 18s linear infinite;
+}
+
+.nf-cube__face {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(139, 92, 246, 0.08)),
+    rgba(7, 11, 20, 0.45);
+  box-shadow: inset 0 0 18px rgba(34, 211, 238, 0.08);
+  backdrop-filter: blur(4px);
+}
+
+.nf-cube__face--front {
+  transform: translateZ(var(--cube-z, 16px));
+}
+
+.nf-cube__face--back {
+  transform: rotateY(180deg) translateZ(var(--cube-z, 16px));
+}
+
+.nf-cube__face--right {
+  transform: rotateY(90deg) translateZ(var(--cube-z, 16px));
+}
+
+.nf-cube__face--left {
+  transform: rotateY(-90deg) translateZ(var(--cube-z, 16px));
+}
+
+.nf-cube__face--top {
+  transform: rotateX(90deg) translateZ(var(--cube-z, 16px));
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.32), rgba(139, 92, 246, 0.14)),
+    rgba(7, 11, 20, 0.55);
+}
+
+.nf-cube__face--bottom {
+  transform: rotateX(-90deg) translateZ(var(--cube-z, 16px));
+}
+
+@keyframes nf-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes nf-cube-turn {
+  from {
+    transform: rotateX(-18deg) rotateY(20deg);
+  }
+  to {
+    transform: rotateX(-18deg) rotateY(380deg);
+  }
+}
+
+@keyframes nf-ring-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nf-float,
+  .nf-cube,
+  .nf-ring {
+    animation: none !important;
+  }
+
+  .nf-parallax-1,
+  .nf-parallax-2,
+  .nf-parallax-board {
+    transform: none;
+    transition: none;
+  }
+}
+

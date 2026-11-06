@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="neyro" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22d3ee"/>
+      <stop offset="0.55" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#f472b6"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 60 19 32 34 4 19 32 4Z" fill="url(#neyro)"/>
+  <path d="M4 19v26l28 15V34L4 19Z" fill="#0b1220" stroke="url(#neyro)" stroke-width="1.5"/>
+  <path d="M60 19v26L32 60V34L60 19Z" fill="#111c30" stroke="url(#neyro)" stroke-width="1.5"/>
+  <path d="m18 43 8 8 19-21" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="25" r="4.5" fill="#f472b6" stroke="#0b1220" stroke-width="2"/>
+</svg>

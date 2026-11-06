@@ -50,6 +50,8 @@ export async function GET() {
           ...describeServiceKey(process.env.SUPABASE_SERVICE_ROLE_KEY),
           projectRef: supabaseProjectRef(),
           urlPath: supabaseUrlPath(),
+          sessionSecret: Boolean(process.env.CLIENT_SESSION_SECRET),
+          cronSecret: Boolean(process.env.CRON_SECRET),
         };
 
   try {

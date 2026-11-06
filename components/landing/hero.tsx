@@ -24,7 +24,7 @@ export function Hero() {
 
           <h1 className="mt-6 max-w-xl font-heading text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             Задачи, которые
-            <span className="bg-gradient-to-r from-cyan-300 via-violet-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-cyan-600 via-violet-600 to-pink-600 bg-clip-text text-transparent dark:from-cyan-300 dark:via-violet-400 dark:to-pink-400">
               {" "}
               не теряются
             </span>

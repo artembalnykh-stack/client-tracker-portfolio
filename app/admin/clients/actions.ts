@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { writeAudit } from "@/lib/audit";
+import { getCurrentAdmin } from "@/lib/auth/require-admin";
 import { INVITE_TTL_DAYS } from "@/lib/constants";
 import {
   buildInviteLink,
@@ -57,6 +59,16 @@ export async function createClientAction(
     return { error: "Не удалось создать клиента" };
   }
 
+  const user = await getCurrentAdmin();
+  await writeAudit({
+    actorType: "admin",
+    actorName: user?.email ?? "Админ",
+    action: "client.create",
+    entityType: "client",
+    entityId: data.id,
+    payload: { name: parsed.data.name },
+  });
+
   revalidatePath("/admin/clients");
   redirect(`/admin/clients/${data.id}`);
 }
@@ -100,6 +112,16 @@ export async function issueInviteAction(
     return { error: "Не удалось создать инвайт" };
   }
 
+  const user = await getCurrentAdmin();
+  await writeAudit({
+    actorType: "admin",
+    actorName: user?.email ?? "Админ",
+    action: "invite.reissue",
+    entityType: "client",
+    entityId: clientId,
+    payload: { expiresAt },
+  });
+
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${clientId}`);
   return { link: buildInviteLink(token) };
@@ -132,6 +154,15 @@ export async function revokeInviteAction(formData: FormData) {
   if (error) {
     throw new Error("Не удалось отозвать инвайт");
   }
+
+  const user = await getCurrentAdmin();
+  await writeAudit({
+    actorType: "admin",
+    actorName: user?.email ?? "Админ",
+    action: "invite.revoke",
+    entityType: "client",
+    entityId: clientId,
+  });
 
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${clientId}`);

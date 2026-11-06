@@ -6,23 +6,31 @@ import {
   CalendarDays,
   GitBranch,
   History,
+  Paperclip,
   Pencil,
 } from "lucide-react";
 import { AddRelationForm } from "@/app/admin/tasks/[id]/add-relation-form";
 import { DeleteTaskButton } from "@/app/admin/tasks/[id]/delete-task-button";
 import { RemoveRelationButton } from "@/app/admin/tasks/[id]/remove-relation-button";
+import { TaskAttachments } from "@/app/admin/tasks/[id]/task-attachments";
 import { TaskStatusSelect } from "@/app/admin/tasks/[id]/task-status-select";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getClientById } from "@/lib/repositories/clients";
-import { getProjectById } from "@/lib/repositories/projects";
+import {
+  getProjectById,
+} from "@/lib/repositories/projects";
 import {
   getTaskById,
   getTaskRelations,
   listProjectTasks,
   listTaskHistory,
 } from "@/lib/repositories/tasks";
+import {
+  listTaskAttachments,
+  signedAttachmentUrls,
+} from "@/lib/repositories/attachments";
 import { formatDate, formatDateTime, isOverdue } from "@/lib/format";
 import { priorityColor, priorityLabel } from "@/lib/priority";
 import { statusColor, statusLabel } from "@/lib/status";
@@ -42,12 +50,35 @@ export default async function TaskDetailPage({
   const task = await getTaskById(id);
   if (!task) notFound();
 
-  const [project, relations, history, projectTasks] = await Promise.all([
-    getProjectById(task.project_id),
-    getTaskRelations(task.id),
-    listTaskHistory(task.id),
-    listProjectTasks(task.project_id),
-  ]);
+  const [project, relations, history, projectTasks, attachmentRows] =
+    await Promise.all([
+      getProjectById(task.project_id),
+      getTaskRelations(task.id),
+      listTaskHistory(task.id),
+      listProjectTasks(task.project_id),
+      listTaskAttachments(task.id),
+    ]);
+
+  const attachments = await Promise.all(
+    attachmentRows.map(async (row) => {
+      const urls = await signedAttachmentUrls(
+        row.storage_path,
+        row.file_name,
+      );
+      return {
+        id: row.id,
+        fileName: row.file_name,
+        mimeType: row.mime_type,
+        sizeBytes: row.size_bytes,
+        width: row.width,
+        height: row.height,
+        url: urls.url,
+        downloadUrl: urls.downloadUrl,
+        uploadedByName: row.uploaded_by_name,
+        createdAt: row.created_at,
+      };
+    }),
+  );
 
   const client = project ? await getClientById(project.client_id) : null;
   const linkedIds = new Set([
@@ -229,10 +260,20 @@ export default async function TaskDetailPage({
             </CardContent>
           </Card>
 
+          <Card className="border-border/70 bg-card/70">
+            <CardHeader>
+              <h2 className="inline-flex items-center gap-2 font-heading text-lg font-bold">
+                <Paperclip className="size-4" /> Файлы
+              </h2>
+            </CardHeader>
+            <CardContent>
+              <TaskAttachments taskId={task.id} items={attachments} />
+            </CardContent>
+          </Card>
+
           <Card className="border-dashed border-border/70 bg-card/40">
             <CardContent className="py-6 text-sm text-muted-foreground">
-              Файлы и комментарии появятся на Stage 3b–4: сначала загрузка в
-              Storage, затем пины на изображениях.
+              Комментарии и пины на изображениях появятся на Stage 4.
             </CardContent>
           </Card>
         </div>

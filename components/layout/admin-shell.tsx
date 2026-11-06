@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LayoutDashboard, Users, Sparkles } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { logoutAction } from "@/app/logout/actions";
@@ -74,6 +75,7 @@ export function AdminShell({
               >
                 Клиенты
               </Link>
+              <NotificationBell />
               <ThemeToggle />
               <form action={logoutAction}>
                 <Button type="submit" variant="ghost" size="sm">
@@ -82,6 +84,10 @@ export function AdminShell({
               </form>
             </div>
           </header>
+
+          <div className="hidden h-12 items-center justify-end border-b border-border/70 bg-background/80 px-6 lg:flex">
+            <NotificationBell />
+          </div>
 
           <main className="flex-1 px-4 py-6 md:px-8 md:py-10">{children}</main>
         </div>

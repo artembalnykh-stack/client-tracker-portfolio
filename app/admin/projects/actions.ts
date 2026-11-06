@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { writeAudit } from "@/lib/audit";
 import { getCurrentAdmin } from "@/lib/auth/require-admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { projectCreateSchema } from "@/lib/validation/project";
@@ -30,16 +31,32 @@ export async function createProjectAction(
   if (!user) return { error: "Нужен вход админа" };
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("projects").insert({
-    client_id: parsed.data.clientId,
-    name: parsed.data.name,
-    description: parsed.data.description || null,
-    is_demo: false,
-  });
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({
+      client_id: parsed.data.clientId,
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      is_demo: false,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !project) {
     return { error: "Не удалось создать проект" };
   }
+
+  await writeAudit({
+    actorType: "admin",
+    actorName: user.email ?? "Админ",
+    action: "project.create",
+    entityType: "project",
+    entityId: project.id,
+    payload: {
+      clientId: parsed.data.clientId,
+      name: parsed.data.name,
+    },
+  });
 
   revalidatePath("/admin");
   revalidatePath(`/admin/clients/${parsed.data.clientId}`);

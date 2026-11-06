@@ -1,12 +1,12 @@
 # Прогресс разработки: Neyroflow
 
-**Текущий статус:** Stage 3a готов, следующий шаг — Stage 3b  
+**Текущий статус:** Stage 3b готов, ждём гейта Stage 3  
 **Последнее обновление:** 06.11.2026
 
 - [x] Stage 0: каркас Next.js 16, документы, skills, проверки
 - [x] Stage 1: БД, RLS, seed, тема, layout, health — **принят**
 - [x] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты — **принят**
-- [ ] Stage 3: админка, канбан, файлы, уведомления, аудит — **3a готов**
+- [ ] Stage 3: админка, канбан, файлы, уведомления, аудит — **3a/3b готовы**
 - [ ] Stage 4: пины, клиентский портал, демо
 - [ ] Stage 5: деплой, README, DNS, финальный seed
 
@@ -24,16 +24,42 @@
 - [x] Удаление через встроенное подтверждение вместо `window.confirm`.
 - [x] `npm run verify`, `npm run verify:build` — зелёные.
 
-## Stage 3b — следующий шаг
+## Stage 3b — файлы, уведомления, аудит
 
-- `/api/attachments`: загрузка/удаление, magic bytes, лимиты 4, signed URL.
-- Колокольчик, polling 30 сек, «прочитать все».
-- Аудит действий.
-- Файлы на странице задачи; комментарии — Stage 4.
+- [x] `/api/attachments`: POST/DELETE, auth админа, origin check, rate limit.
+- [x] Валидация: расширение + заявленный MIME + magic bytes + размер;
+  JPEG/PNG/WebP/PDF 500 КБ, ZIP/DOCX 2 МБ; SVG/GIF отклоняются.
+- [x] Лимит 4 на задачу (сервер + триггер), signed URL 1 час, удаление из Storage.
+- [x] UI файлов на задаче: загрузка, предпросмотр изображений, скачивание,
+  удаление с подтверждением.
+- [x] Уведомление клиенту при загрузке файла.
+- [x] `/api/notifications`: GET/PATCH, scoping по admin/client.
+- [x] Колокольчик в админке: badge, polling 30 сек, «Прочитать все».
+- [x] Аудит: task.create/update/delete/status, relation.create/delete,
+  client.create, invite.reissue/revoke, project.create, file.upload/delete.
+- [x] `npm run verify`, `npm run verify:build` — зелёные.
 
-## Stage 3 — гейт после 3b
+## Stage 3 — гейт
 
-Проверить загрузку файлов, лимиты, уведомления и аудит; затем «Этап 3 принят».
+Проверено:
+- файл загружается, отображается, скачивается; SVG отклонён;
+- 4 файла — лимит, 5-й отклонён; удаление чистит Storage и БД;
+- уведомления клиента по файлам приходят через API (4 unread);
+- аудит пишется (проверить SQL-запросом ниже).
+
+Пользователю: выполнить в SQL Editor
+
+```sql
+select action, entity_type, created_at
+from public.audit_logs
+order by created_at desc
+limit 15;
+```
+
+Ожидаемы `file.upload`, `file.delete`, `task.create`, `task.update`,
+`task.delete`, `relation.create`, `relation.delete`.
+
+Затем «Этап 3 принят».
 
 ## Stage 2 — сделано
 
@@ -56,11 +82,6 @@
 - Найден и исправлен баг: `inviteTokenSchema` требовал 20 символов, а dev-токены
   `dev-client-a-token` / `dev-client-b-token` — 18. Минимум снижен до 16.
 - Лендинг проверен в dark/light, console errors нет.
-
-## Stage 3 — следующий шаг
-
-Канбан с drag-and-drop, CRUD задач, связи, файлы, уведомления, аудит.
-
 
 ## Заметки для следующего агента
 
@@ -86,3 +107,10 @@
   генерируют разные `aria-describedby` и React ругается на hydration.
 - Удаление задачи — встроенное подтверждение, не `window.confirm`
   (dsh-pilot не умеет принимать нативные диалоги).
+- Вложения: `file-type` + `image-size`, bucket `attachments`, signed URL 1 час,
+  путь `{task_id}/{uuid}.{ext}`. Загрузка только для админа; клиентская — Stage 4.
+- Уведомления: файл уведомляет клиента, смена статуса — противоположную сторону;
+  админский колокольчик пуст, пока действует только админ. API проверен на клиенте A.
+- Аудит best-effort через service role; при сбое основное действие не падает.
+- Тестовые file-уведомления клиента A остаются в dev; `cleanup.dev.sql` удалит их
+  вместе с dev-клиентами.

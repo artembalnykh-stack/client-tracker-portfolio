@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { writeAudit } from "@/lib/audit";
 import { getCurrentAdmin } from "@/lib/auth/require-admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -75,6 +76,15 @@ export async function saveTaskAction(
       return { error: "Не удалось сохранить задачу" };
     }
 
+    await writeAudit({
+      actorType: "admin",
+      actorName: user.email ?? "Админ",
+      action: "task.update",
+      entityType: "task",
+      entityId: taskId,
+      payload: { title: data.title, projectId: data.project_id },
+    });
+
     revalidatePath("/admin");
     revalidatePath(`/admin/tasks/${taskId}`);
     redirect(`/admin/tasks/${taskId}`);
@@ -111,6 +121,19 @@ export async function saveTaskAction(
   if (error || !created) {
     return { error: "Не удалось создать задачу" };
   }
+
+  await writeAudit({
+    actorType: "admin",
+    actorName: user.email ?? "Админ",
+    action: "task.create",
+    entityType: "task",
+    entityId: created.id,
+    payload: {
+      title: createData.title,
+      projectId: createData.project_id,
+      status: createData.status_code,
+    },
+  });
 
   revalidatePath("/admin");
   redirect(`/admin/tasks/${created.id}`);
@@ -205,6 +228,12 @@ export async function deleteTaskAction(
   if (!user) return { ok: false, error: "Нужен вход админа" };
 
   const supabase = await createServerSupabaseClient();
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("id, title")
+    .eq("id", parsedId.data)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("tasks")
     .delete()
@@ -213,6 +242,15 @@ export async function deleteTaskAction(
   if (error) {
     return { ok: false, error: "Не удалось удалить задачу" };
   }
+
+  await writeAudit({
+    actorType: "admin",
+    actorName: user.email ?? "Админ",
+    action: "task.delete",
+    entityType: "task",
+    entityId: parsedId.data,
+    payload: { title: existing?.title ?? null },
+  });
 
   revalidatePath("/admin");
   return { ok: true };
@@ -264,14 +302,30 @@ export async function addRelationAction(
     return { error: "У задачи уже есть родитель" };
   }
 
-  const { error } = await supabase.from("task_relations").insert({
-    parent_task_id: parsed.data.parentTaskId,
-    child_task_id: parsed.data.childTaskId,
-  });
+  const { data: relation, error } = await supabase
+    .from("task_relations")
+    .insert({
+      parent_task_id: parsed.data.parentTaskId,
+      child_task_id: parsed.data.childTaskId,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !relation) {
     return { error: "Не удалось связать задачи: проверьте циклы" };
   }
+
+  await writeAudit({
+    actorType: "admin",
+    actorName: user.email ?? "Админ",
+    action: "relation.create",
+    entityType: "task_relation",
+    entityId: relation.id,
+    payload: {
+      parentTaskId: parsed.data.parentTaskId,
+      childTaskId: parsed.data.childTaskId,
+    },
+  });
 
   revalidatePath(`/admin/tasks/${parsed.data.parentTaskId}`);
   revalidatePath(`/admin/tasks/${parsed.data.childTaskId}`);
@@ -292,6 +346,12 @@ export async function removeRelationAction(
   if (!user) return { ok: false, error: "Нужен вход админа" };
 
   const supabase = await createServerSupabaseClient();
+  const { data: relation } = await supabase
+    .from("task_relations")
+    .select("id, parent_task_id, child_task_id")
+    .eq("id", parsed.data)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("task_relations")
     .delete()
@@ -300,6 +360,20 @@ export async function removeRelationAction(
   if (error) {
     return { ok: false, error: "Не удалось удалить связь" };
   }
+
+  await writeAudit({
+    actorType: "admin",
+    actorName: user.email ?? "Админ",
+    action: "relation.delete",
+    entityType: "task_relation",
+    entityId: parsed.data,
+    payload: relation
+      ? {
+          parentTaskId: relation.parent_task_id,
+          childTaskId: relation.child_task_id,
+        }
+      : undefined,
+  });
 
   revalidatePath("/admin");
   revalidatePath(`/admin/tasks/${parsedTask.data}`);

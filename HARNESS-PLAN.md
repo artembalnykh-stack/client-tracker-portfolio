@@ -59,7 +59,7 @@
 7. **Ручной Supabase.** SQL применяет пользователь, агент не видит БД. Решение: SQL в транзакции `begin/commit`, идемпотентные объекты, `/api/health` проверяет `statuses` и bucket без раскрытия секретов; при ошибке пользователь присылает только текст ошибки.
 8. **Демо не должно светиться в админке.** `projects.is_demo` есть, но демо-клиент всё равно попадёт в `/admin/clients`. Решение: добавить `clients.is_demo` (маленькое расширение схемы) и фильтровать везде; демо-вложения отдавать из `public/demo-assets`, не из Storage.
 9. **Дедлайн-уведомления.** В ТЗ не сказано, кому идёт уведомление от cron. Решение: и админу, и клиенту; `dedupe_key` включает получателя, иначе один из двух не получит.
-10. **npm-кэш вне workspace.** Песочница `workspace-write` не даст писать в `~/.npm`; `npm install` упадёт с EPERM. Решение: `.npmrc` с `cache=.npm-cache` внутри проекта (проверено — работает). Сборка — в чистой копии без `.env.local`.
+10. **npm-кэш вне workspace.** Песочница `workspace-write` не даст писать в `~/.npm`; `npm install` упадёт с EPERM. Решение: `npm_config_cache=.npm-cache` в каждой npm/npx-команде. `.npmrc` не создаём: `cc-safety-net` блокирует его как потенциальный носитель токенов. Сборка — в чистой копии без `.env*`.
 
 ### 1.4. Что фиксируем до старта (`docs/DECISIONS.md`)
 
@@ -162,13 +162,11 @@ Stage 5  deploy + README + DNS             → 1 сессия
 
 ### 3.6. Кэши и окружение
 
-`.npmrc` в проекте:
+Локальный кэш задаётся переменной окружения, а не `.npmrc` (его блокирует
+`cc-safety-net`):
 
-```ini
-cache=.npm-cache
-fund=false
-audit=false
-loglevel=error
+```bash
+npm_config_cache=.npm-cache npm install --ignore-scripts --no-audit --no-fund
 ```
 
 Это обязательно: иначе `npm install` пытается писать в `~/.npm`, а песочница это запрещает. `node_modules`, `.next`, `.npm-cache`, `.dsh-pilot` — в `.gitignore`.
@@ -183,7 +181,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 rsync -a \
   --exclude node_modules --exclude .next --exclude .git \
-  --exclude .env.local --exclude .env --exclude .npm-cache --exclude .dsh-pilot \
+  --exclude '.env*' --exclude .npm-cache --exclude .dsh-pilot \
   "$ROOT/" "$TMP/"
 ln -s "$ROOT/node_modules" "$TMP/node_modules"
 cd "$TMP"
@@ -391,7 +389,7 @@ DSH-песочница ограничивает **запись**, но **чте�
 ### Stage 0. Подготовка (до этапа 1)
 
 - Скопировать `TS.md` и `reference.jpg` в `docs/`.
-- `git init`, `.gitignore`, `.npmrc`, `AGENTS.md`, `PROGRESS.md`, `docs/DECISIONS.md`, `docs/DESIGN.md` (каркас).
+- `git init`, `.gitignore`, `AGENTS.md`, `PROGRESS.md`, `docs/DECISIONS.md`, `docs/DESIGN.md` (каркас).
 - Next.js 16.4.5 + Tailwind 4 + shadcn; базовые зависимости.
 - 3 проектных skill.
 - `scripts/verify-build.sh`, `scripts/check-secrets.mjs`.

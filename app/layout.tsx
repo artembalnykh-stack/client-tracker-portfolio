@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter, Manrope } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({
@@ -28,9 +29,11 @@ export default function RootLayout({
     <html
       lang="ru"
       suppressHydrationWarning
-      className={cn("dark", inter.variable, manrope.variable)}
+      className={cn(inter.variable, manrope.variable)}
     >
-      <body className="font-sans">{children}</body>
+      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

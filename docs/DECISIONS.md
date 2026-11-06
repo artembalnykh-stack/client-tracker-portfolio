@@ -1,0 +1,109 @@
+# Принятые решения — Neyroflow
+
+**Дата:** 06.11.2026  
+**Статус:** зафиксировано до Stage 1. Менять только с обновлением этого файла и `PROGRESS.md`.
+
+## Продукт
+
+- Бренд: **Neyroflow**, подзаголовок «Задачи, которые не теряются».
+- Визуальное направление: **A** — кинематографичный лендинг + сдержанное, читаемое приложение.
+- Доска: **компактная**.
+- Владельцев на инсталляцию: **один**. Новый владелец — новый пользователь Supabase Auth; передача продукта = передача инфраструктуры.
+- Админка E2E: **assisted login** (пользователь входит сам, агент водит залогиненную сессию). Пароль в чат не попадает.
+- Демо-контент: 2 проекта из портфолио — «Лендинг для студии» и «Чат-бот для VK», ~12 задач, комментарии с пинами.
+
+## Стек
+
+| Слой | Версия |
+|---|---|
+| Next.js | 16.4.5 (App Router) |
+| React / React DOM | 19.3.1 |
+| TypeScript | 5.9.3 (сознательно не 7.x) |
+| Tailwind CSS | 4.3.5 |
+| shadcn/ui | CLI 4.23.0 |
+| Supabase JS / SSR | 2.119.0 / 0.12.7 |
+| dnd-kit | core 6.3.1, sortable 10.0.0, utilities 3.2.2 |
+| Framer Motion | 14.10.0 |
+| zod / react-hook-form | 4.6.7 / 7.91.0 |
+| date-fns | 4.4.0 |
+| file-type / image-size | 22.3.0 / 2.1.0 |
+| jose | 6.2.15 |
+| Vitest | 5.1.0 |
+
+TypeScript 5.9.3 выбран вместо 7.0.2, потому что `eslint-config-next` и
+`typescript-eslint` ещё не гарантируют бесшовную работу с TS 7. Обновление —
+отдельной задачей после MVP.
+
+## Next.js 16
+
+- `proxy.ts` вместо `middleware.ts` для refresh Supabase-сессии и защиты `/admin`.
+- `cookies()`, `params`, `searchParams` — асинхронные.
+- `next lint` удалён: скрипт `lint` = `eslint .`.
+- Tailwind 4: `@import "tailwindcss"`, `@theme`, без `tailwind.config.js` по умолчанию.
+- Все страницы, которые ходят в БД, — `dynamic = "force-dynamic"`, чтобы
+  `next build` не требовал Supabase.
+
+## Схема и данные
+
+Отклонения/уточнения к `docs/TS.md`:
+
+1. **`clients.is_demo boolean not null default false`** — чтобы демо-клиент не
+   появлялся в админке. Все админские выборки фильтруют `is_demo = false`.
+2. **`change_task_status` RPC** — атомарно обновляет задачу, пишет
+   `task_status_history`, уведомление и аудит. Триггер истории остаётся.
+3. **Удаление вложения с пином** — `before delete` триггер обнуляет
+   `pin_x`, `pin_y`, `pinned_attachment_id`; иначе `on delete set null` нарушает
+   check «все три null или все три заполнены».
+4. **Демо-вложения** — локальные PNG в `public/demo-assets`, не Storage.
+5. **Дедлайн-уведомления** — и админу, и клиенту; `dedupe_key` включает
+   получателя.
+6. **Удаление задачи/комментария** — сначала удаляются объекты Storage, потом
+   строки БД.
+7. **Размеры изображений** — `image-size` по буферу; лимит пикселей, чтобы
+   отсечь decompression bomb.
+8. **Загрузка файлов** — route handler `/api/attachments`, не server action:
+   лимит 2 МБ + multipart проходит в лимит функции Vercel 4.5 МБ.
+9. **`service_role`** — только `lib/supabase/admin.ts` (`server-only`), используется
+   для клиентского портала, демо, Storage и cron. Админские CRUD идут через
+   Supabase Auth + RLS.
+10. **Клиент** — JWT HS256 в HttpOnly-cookie; `session_version` проверяется на
+    каждом запросе; отзыв инвайта инкрементит версию.
+
+## Безопасность и процесс
+
+- `.env.local` создаёт и заполняет только пользователь; агент не читает и не
+  создаёт его. `cc-safety-net` блокирует `.env*` и `.npmrc` на уровне
+  инструментов.
+- Dev-сервер запускает пользователь. Агент ходит на `localhost:3000`.
+- Сборка проверяется в чистой копии без `.env*` (`scripts/verify-build.sh`),
+  с фиктивными public-переменными.
+- Локальный npm-кэш — `npm_config_cache=.npm-cache`; `.npmrc` не создаётся
+  (guard блокирует, и он не нужен).
+- MCP не подключаются. Плагины: `cc-safety-net`, `dsh-pilot`, `dsh-context`.
+- `@deepseek-ai/dsh-experimental-plugin-market-bundle` отключён.
+- Rate limit — in-memory Map на `/invite` и `/api/attachments`; на Vercel это
+  ограничение на инстанс, для MVP достаточно.
+- Security headers: `X-Content-Type-Options`, `Referrer-Policy`,
+  `X-Frame-Options: DENY`, `Permissions-Policy`.
+
+## Тестирование
+
+- Vitest — чистая логика: геометрия пинов, переходы статусов, хеш инвайта,
+  валидация файлов, клиентский доступ.
+- `dsh-pilot` — публичные страницы, клиентский портал, демо, ресайз/темы.
+- Клиент A/B — через `seed.dev.sql` с известными dev-инвайтами и два cookie-jar.
+- Админка — assisted login или ручной чек-лист; пароль не передаётся.
+- Полный Playwright-набор в MVP не пишем: дорого по токенам и времени.
+
+## Деплой и передача
+
+- Vercel, Node 22.x; локально допустим 24.
+- Cron `/api/cron/deadlines`: `0 6 * * *` UTC = 09:00 МСК, `CRON_SECRET`.
+- Домен: apex `neyrocontent.ru`; fallback `neyrocontent.vercel.app`.
+- Один владелец на инсталляцию. Передача: репозиторий + Vercel + Supabase +
+  домен; новый владелец создаёт Supabase Auth-пользователя, заполняет env;
+  старый админ удаляется, секреты ротируются.
+
+## Открытые вопросы
+
+Нет. При изменении допущений обновить этот файл и `PROGRESS.md`.

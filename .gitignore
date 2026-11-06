@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# local caches
+.npm-cache/
+.next/
+*.tsbuildinfo
+
+# environment — only the example is tracked
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel
+
+# dsh / pilot artifacts
+.dsh-pilot/
+
+# tests
+coverage/
+
+# editor / os
+.DS_Store
+*.pem

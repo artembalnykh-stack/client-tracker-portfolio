@@ -1,6 +1,6 @@
 # Прогресс разработки: Neyroflow
 
-**Текущий статус:** Stage 5: CSS-3D готов, деплой после подтверждения  
+**Текущий статус:** Stage 5: код и документация готовы, деплой ждёт GitHub/Vercel/env  
 **Последнее обновление:** 06.11.2026
 
 - [x] Stage 0: каркас Next.js 16, документы, skills, проверки
@@ -8,7 +8,7 @@
 - [x] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты — **принят**
 - [x] Stage 3: админка, канбан, файлы, уведомления, аудит — **принят**
 - [x] Stage 4: пины, клиентский портал, демо — **принят**
-- [ ] Stage 5: CSS-3D, деплой, README, DNS, финальный seed — **в работе**
+- [ ] Stage 5: CSS-3D, деплой, README, DNS, финальный seed — **готов к деплою**
 
 ## Stage 3a — доска и задачи
 
@@ -90,13 +90,27 @@
 - [x] Демо/лендинг проверены на 1440 и 360, light/dark.
 - [x] Скриншоты: `docs/screenshots/hero-3d-desktop-dark.png`,
   `hero-3d-desktop-light.png`, `hero-3d-mobile-light.png`.
-- [ ] Показать пользователю перед деплоем.
-- [ ] README, Mermaid, DNS/Vercel, cron дедлайнов, финальный seed.
+- [x] `README.md`: описание, стек, роли, запуск, Mermaid, деплой, ПДн.
+- [x] `docs/DEPLOY.md`: Vercel, env, cron, Reg.ru DNS, smoke test.
+- [x] `vercel.json`: cron `0 6 * * *` UTC = 09:00 МСК.
+- [x] `GET /api/cron/deadlines`: Bearer `CRON_SECRET`, дедлайны на завтра,
+  `dedupe_key`, уведомления админу/клиенту; без секрета — 401.
+- [x] Финальный seed — `supabase/seed.sql` (6 статусов + 2 демо-проекта,
+  12 задач, 3 пина); dev-seed отдельно.
+- [x] `npm run verify`, `npm run verify:build` — зелёные.
+- [ ] Задеплоить на Vercel: нужен GitHub-репозиторий, env и домен.
 
 ## Stage 5 — гейт
 
-Показать CSS-3D и получить подтверждение на деплой. После деплоя проверить
-`/api/health`, `/demo`, инвайт клиента и cron.
+Код и документация готовы. Деплой не выполнен: в окружении нет
+GitHub-репозитория и авторизованного Vercel CLI. Нужны действия владельца:
+
+1. Создать GitHub-репозиторий и запушить `main`.
+2. Импортировать в Vercel, задать 6 env из `.env.example`.
+3. Vercel → Domains → `neyrocontent.ru`; DNS в Reg.ru.
+4. Проверить `/api/health`, `/demo`, cron.
+
+После live-проверки Stage 5 → 100%.
 
 ## Stage 2 — сделано
 

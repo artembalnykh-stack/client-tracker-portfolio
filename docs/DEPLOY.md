@@ -14,7 +14,7 @@
 1. Запушить репозиторий на GitHub (без `.env.local`; он в `.gitignore`).
 2. Vercel → **Add New → Project** → импортировать репозиторий.
 3. Framework Preset: **Next.js**. Root Directory: корень репозитория.
-4. Node.js: **22.x**.
+4. Node.js: **26.x** (соответствует `engines` в `package.json`).
 5. Build Command / Output: оставить по умолчанию (`next build`).
 
 ## 3. Vercel: Environment Variables

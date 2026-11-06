@@ -133,7 +133,7 @@ erDiagram
 
 1. Запушить репозиторий на GitHub.
 2. Vercel → **Add New → Project** → импортировать репозиторий.
-   Framework Preset: **Next.js**; Node.js 22.x.
+   Framework Preset: **Next.js**; Node.js **26.x**.
 3. **Settings → Environment Variables** — добавить все шесть переменных из
    `.env.example` с production-значениями. Для `NEXT_PUBLIC_SITE_URL`:
    `https://neyrocontent.ru`.

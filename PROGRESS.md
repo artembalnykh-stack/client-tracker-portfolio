@@ -1,14 +1,14 @@
 # Прогресс разработки: Neyroflow
 
-**Текущий статус:** Stage 5: код и документация готовы, деплой ждёт GitHub/Vercel/env  
-**Последнее обновление:** 06.11.2026
+**Текущий статус:** Stage 5: live на Vercel, остался домен  
+**Последнее обновление:** 07.11.2026
 
 - [x] Stage 0: каркас Next.js 16, документы, skills, проверки
 - [x] Stage 1: БД, RLS, seed, тема, layout, health — **принят**
 - [x] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты — **принят**
 - [x] Stage 3: админка, канбан, файлы, уведомления, аудит — **принят**
 - [x] Stage 4: пины, клиентский портал, демо — **принят**
-- [ ] Stage 5: CSS-3D, деплой, README, DNS, финальный seed — **готов к деплою**
+- [ ] Stage 5: CSS-3D, деплой, README, DNS, финальный seed — **live, домен ждёт**
 
 ## Stage 3a — доска и задачи
 
@@ -100,18 +100,26 @@
 - [x] `npm run verify`, `npm run verify:build` — зелёные.
 - [x] GitHub: `https://github.com/artembalnykh-stack/client-tracker-portfolio`,
   ветка `main` запушена.
-- [ ] Vercel: импорт репозитория, 6 env, домен `neyrocontent.ru`.
+- [x] Vercel production: `https://client-tracker-portfolio.vercel.app`;
+  `/api/health` → 200 (`db/storage/statuses: 6`), `/demo` → 200.
+- [x] Вход админа на live проверен пользователем.
+- [x] Node runtime: `26.x` (Vercel предупреждал об устаревании 22.x).
+- [ ] Домен `neyrocontent.ru`, DNS Reg.ru, `NEXT_PUBLIC_SITE_URL` на домен.
 
 ## Stage 5 — гейт
 
-Код, документация и GitHub-репозиторий готовы. Остался Vercel:
+Live-проверка пройдена: health 200, demo 200, вход админа работает.
+Остался только домен:
 
-1. Импортировать `artembalnykh-stack/client-tracker-portfolio`.
-2. Задать 6 env из `.env.example`; `NEXT_PUBLIC_SITE_URL=https://neyrocontent.ru`.
-3. Vercel → Domains → `neyrocontent.ru`; DNS в Reg.ru.
-4. Проверить `/api/health`, `/demo`, cron.
+1. Vercel → Domains → `neyrocontent.ru` и `www`.
+2. Reg.ru DNS по значениям Vercel.
+3. Поменять `NEXT_PUBLIC_SITE_URL` на `https://neyrocontent.ru`, Redeploy.
+4. Supabase Auth URL Configuration → домен.
+5. Проверить `/api/health`, `/demo`, cron; Stage 5 → 100%.
 
-После live-проверки Stage 5 → 100%.
+Cron ищется в Vercel: **Deployments → последний деплой → Deployment
+Summary** (раздел Cron Jobs/Schedules) или Project → **Schedules** в новом UI.
+Маршрут `/api/cron/deadlines` уже отдаёт 401 без Bearer — значит, live.
 
 ## Stage 2 — сделано
 

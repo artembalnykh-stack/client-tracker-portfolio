@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type AttachmentRow = {
   id: string;
@@ -21,8 +20,8 @@ export type AttachmentRow = {
 export async function listTaskAttachments(
   taskId: string,
 ): Promise<AttachmentRow[]> {
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("attachments")
     .select(
       "id, task_id, comment_id, uploaded_by_type, uploaded_by_name, file_name, mime_type, size_bytes, storage_path, width, height, created_at",

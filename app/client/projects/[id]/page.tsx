@@ -1,11 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FolderKanban } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { ClientBoard } from "@/components/client/client-board";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getClientSession } from "@/lib/auth/client-session";
-import { getClientProject } from "@/lib/repositories/client-portal";
+import {
+  listClientProjectTasks,
+  getClientProject,
+} from "@/lib/repositories/client-portal";
 import { formatDate } from "@/lib/format";
+
+export const metadata: Metadata = {
+  title: "Проект — Neyroflow",
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +30,10 @@ export default async function ClientProjectPage({
   const project = await getClientProject(client.id, id);
   if (!project) notFound();
 
+  const tasks = await listClientProjectTasks(client.id, project.id);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <Link
           href="/client"
@@ -40,27 +51,15 @@ export default async function ClientProjectPage({
         <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight">
           {project.name}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          {project.description || "Описание появится позже."}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
           Создан {formatDate(project.created_at)}
         </p>
       </div>
 
-      <Card className="border-border/70 bg-card/70">
-        <CardHeader>
-          <h2 className="inline-flex items-center gap-2 font-heading text-lg font-bold">
-            <FolderKanban className="size-4 text-primary" /> О проекте
-          </h2>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {project.description || "Описание появится позже."}
-          </p>
-          <p className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-            Доска, задачи и комментарии с пинами появятся на Stage 4. Сейчас
-            портал уже проверяет доступ и изоляцию клиентов.
-          </p>
-        </CardContent>
-      </Card>
+      <ClientBoard tasks={tasks} />
     </div>
   );
 }

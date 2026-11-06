@@ -24,7 +24,8 @@ export default async function ClientProjectsPage() {
           {client.name}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Здесь появятся задачи, комментарии и согласование. Доска — на Stage 4.
+          Откройте проект, чтобы увидеть доску, задачи, комментарии и пины на
+          макетах.
         </p>
       </div>
 

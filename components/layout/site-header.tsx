@@ -12,18 +12,24 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-          <a href="#features" className="hover:text-foreground">
+          <Link href="/#features" className="hover:text-foreground">
             Возможности
-          </a>
-          <a href="#pins" className="hover:text-foreground">
+          </Link>
+          <Link href="/#pins" className="hover:text-foreground">
             Пины
-          </a>
+          </Link>
           <Link href="/demo" className="hover:text-foreground">
             Демо
           </Link>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Link
+            href="/demo"
+            className="rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground md:hidden"
+          >
+            Демо
+          </Link>
           <ThemeToggle />
           <Link
             href="/login"

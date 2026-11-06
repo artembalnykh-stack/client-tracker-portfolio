@@ -26,6 +26,7 @@ export type TaskAttachmentItem = {
   url: string | null;
   downloadUrl: string | null;
   uploadedByName: string | null;
+  uploadedByType: string;
   createdAt: string;
 };
 
@@ -34,9 +35,13 @@ const MAX_ATTACHMENTS = 4;
 export function TaskAttachments({
   taskId,
   items,
+  readOnly = false,
+  deleteMode = "all",
 }: {
   taskId: string;
   items: TaskAttachmentItem[];
+  readOnly?: boolean;
+  deleteMode?: "all" | "client" | "none";
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +50,12 @@ export function TaskAttachments({
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const full = items.length >= MAX_ATTACHMENTS;
+
+  function canDeleteItem(item: TaskAttachmentItem): boolean {
+    if (readOnly || deleteMode === "none") return false;
+    if (deleteMode === "all") return true;
+    return item.uploadedByType === "client";
+  }
 
   async function upload(file: File) {
     setError(null);
@@ -105,26 +116,34 @@ export function TaskAttachments({
         </p>
 
         <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp,.pdf,.zip,.docx"
-            aria-label="Загрузить файл"
-            className="sr-only"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void upload(file);
-            }}
-          />
-          <Button
-            type="button"
-            size="sm"
-            disabled={full || uploading}
-            onClick={() => inputRef.current?.click()}
-          >
-            <Upload className="size-3.5" />
-            {uploading ? "Загружаем…" : full ? "Лимит 4 файла" : "Загрузить"}
-          </Button>
+          {!readOnly ? (
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,.pdf,.zip,.docx"
+                aria-label="Загрузить файл"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void upload(file);
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={full || uploading}
+                onClick={() => inputRef.current?.click()}
+              >
+                <Upload className="size-3.5" />
+                {uploading
+                  ? "Загружаем…"
+                  : full
+                    ? "Лимит 4 файла"
+                    : "Загрузить"}
+              </Button>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -204,37 +223,39 @@ export function TaskAttachments({
                     </span>
                   )}
 
-                  {confirmId === item.id ? (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => void remove(item.id)}
-                      >
-                        Да
-                      </Button>
+                  {!readOnly && canDeleteItem(item) ? (
+                    confirmId === item.id ? (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => void remove(item.id)}
+                        >
+                          Да
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setConfirmId(null)}
+                        >
+                          Нет
+                        </Button>
+                      </div>
+                    ) : (
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        onClick={() => setConfirmId(null)}
+                        size="icon"
+                        aria-label={`Удалить ${item.fileName}`}
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setConfirmId(item.id)}
                       >
-                        Нет
+                        <Trash2 className="size-4" />
                       </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Удалить ${item.fileName}`}
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => setConfirmId(item.id)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  )}
+                    )
+                  ) : null}
                 </div>
               </li>
             );

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
   AdminTaskRow,
@@ -55,8 +56,8 @@ export async function listProjectTasks(
 }
 
 export async function listTaskHistory(taskId: string): Promise<HistoryRow[]> {
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("task_status_history")
     .select("id, from_status, to_status, changed_by_type, changed_by_name, created_at")
     .eq("task_id", taskId)

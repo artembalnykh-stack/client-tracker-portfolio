@@ -6,6 +6,7 @@ import {
   CalendarDays,
   GitBranch,
   History,
+  MessageSquare,
   Paperclip,
   Pencil,
 } from "lucide-react";
@@ -14,13 +15,13 @@ import { DeleteTaskButton } from "@/app/admin/tasks/[id]/delete-task-button";
 import { RemoveRelationButton } from "@/app/admin/tasks/[id]/remove-relation-button";
 import { TaskAttachments } from "@/app/admin/tasks/[id]/task-attachments";
 import { TaskStatusSelect } from "@/app/admin/tasks/[id]/task-status-select";
+import { TaskComments } from "@/components/task-comments";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { getCurrentAdmin } from "@/lib/auth/require-admin";
 import { getClientById } from "@/lib/repositories/clients";
-import {
-  getProjectById,
-} from "@/lib/repositories/projects";
+import { getProjectById } from "@/lib/repositories/projects";
 import {
   getTaskById,
   getTaskRelations,
@@ -31,6 +32,10 @@ import {
   listTaskAttachments,
   signedAttachmentUrls,
 } from "@/lib/repositories/attachments";
+import {
+  listCommentAttachments,
+  listTaskComments,
+} from "@/lib/repositories/comments";
 import { formatDate, formatDateTime, isOverdue } from "@/lib/format";
 import { priorityColor, priorityLabel } from "@/lib/priority";
 import { statusColor, statusLabel } from "@/lib/status";
@@ -50,14 +55,17 @@ export default async function TaskDetailPage({
   const task = await getTaskById(id);
   if (!task) notFound();
 
-  const [project, relations, history, projectTasks, attachmentRows] =
+  const [project, relations, history, projectTasks, attachmentRows, comments] =
     await Promise.all([
       getProjectById(task.project_id),
       getTaskRelations(task.id),
       listTaskHistory(task.id),
       listProjectTasks(task.project_id),
       listTaskAttachments(task.id),
+      listTaskComments(task.id),
     ]);
+
+  const adminUser = await getCurrentAdmin();
 
   const attachments = await Promise.all(
     attachmentRows.map(async (row) => {
@@ -75,10 +83,69 @@ export default async function TaskDetailPage({
         url: urls.url,
         downloadUrl: urls.downloadUrl,
         uploadedByName: row.uploaded_by_name,
+        uploadedByType: row.uploaded_by_type,
         createdAt: row.created_at,
       };
     }),
   );
+
+  const commentFiles = await listCommentAttachments(
+    comments.map((comment) => comment.id),
+  );
+  const commentAttachments = await Promise.all(
+    commentFiles.map(async (row) => {
+      const urls = await signedAttachmentUrls(
+        row.storage_path,
+        row.file_name,
+      );
+      return {
+        id: row.id,
+        commentId: row.comment_id,
+        fileName: row.file_name,
+        mimeType: row.mime_type,
+        sizeBytes: row.size_bytes,
+        width: row.width,
+        height: row.height,
+        url: urls.url,
+        downloadUrl: urls.downloadUrl,
+        createdAt: row.created_at,
+      };
+    }),
+  );
+
+  const filesByComment = new Map<string, typeof commentAttachments>();
+  for (const file of commentAttachments) {
+    if (!file.commentId) continue;
+    const list = filesByComment.get(file.commentId) ?? [];
+    list.push(file);
+    filesByComment.set(file.commentId, list);
+  }
+
+  const commentsForUi = comments.map((comment) => ({
+    id: comment.id,
+    authorType: comment.author_type,
+    authorId: comment.author_id,
+    authorName: comment.author_name,
+    body: comment.body,
+    pinnedAttachmentId: comment.pinned_attachment_id,
+    pinX: comment.pin_x === null ? null : Number(comment.pin_x),
+    pinY: comment.pin_y === null ? null : Number(comment.pin_y),
+    createdAt: comment.created_at,
+    attachments: filesByComment.get(comment.id) ?? [],
+  }));
+
+  const pinImages = attachments
+    .filter(
+      (attachment) =>
+        attachment.mimeType.startsWith("image/") && attachment.url,
+    )
+    .map((attachment) => ({
+      id: attachment.id,
+      fileName: attachment.fileName,
+      url: attachment.url as string,
+      width: attachment.width,
+      height: attachment.height,
+    }));
 
   const client = project ? await getClientById(project.client_id) : null;
   const linkedIds = new Set([
@@ -271,9 +338,27 @@ export default async function TaskDetailPage({
             </CardContent>
           </Card>
 
-          <Card className="border-dashed border-border/70 bg-card/40">
-            <CardContent className="py-6 text-sm text-muted-foreground">
-              Комментарии и пины на изображениях появятся на Stage 4.
+          <Card className="border-border/70 bg-card/70">
+            <CardHeader>
+              <h2 className="inline-flex items-center gap-2 font-heading text-lg font-bold">
+                <MessageSquare className="size-4" /> Комментарии и пины
+              </h2>
+            </CardHeader>
+            <CardContent>
+              <TaskComments
+                taskId={task.id}
+                images={pinImages}
+                comments={commentsForUi}
+                actor={
+                  adminUser
+                    ? {
+                        type: "admin",
+                        id: adminUser.id,
+                        name: adminUser.email ?? "Админ",
+                      }
+                    : null
+                }
+              />
             </CardContent>
           </Card>
         </div>

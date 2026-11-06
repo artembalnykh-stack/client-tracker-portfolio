@@ -2,17 +2,26 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { writeAudit } from "@/lib/audit";
-import { getCurrentAdmin } from "@/lib/auth/require-admin";
+import { getActor, type Actor } from "@/lib/auth/actor";
+import { getClientTaskAccess } from "@/lib/auth/client-access";
+import { siteUrl } from "@/lib/env.server";
 import { validateUpload } from "@/lib/files";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { siteUrl } from "@/lib/env.server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 4;
+
+type AttachmentContext = {
+  taskId: string;
+  taskTitle: string;
+  projectId: string;
+  clientId: string;
+  commentId: string | null;
+};
 
 function jsonError(message: string, status: number) {
   return NextResponse.json(
@@ -31,17 +40,108 @@ function sameOrigin(request: NextRequest): boolean {
   }
 }
 
+async function resolveContext(
+  actor: Actor,
+  taskId: string | null,
+  commentId: string | null,
+): Promise<AttachmentContext | null> {
+  const admin = createAdminClient();
+  let resolvedTaskId = taskId;
+  let resolvedCommentId: string | null = null;
+
+  if (commentId) {
+    const { data: comment } = await admin
+      .from("comments")
+      .select("id, task_id")
+      .eq("id", commentId)
+      .maybeSingle();
+    if (!comment) return null;
+    resolvedTaskId = comment.task_id;
+    resolvedCommentId = comment.id;
+  }
+
+  if (!resolvedTaskId) return null;
+
+  const { data: task } = await admin
+    .from("tasks")
+    .select("id, title, project_id")
+    .eq("id", resolvedTaskId)
+    .maybeSingle();
+  if (!task) return null;
+
+  const { data: project } = await admin
+    .from("projects")
+    .select("id, client_id, is_demo")
+    .eq("id", task.project_id)
+    .maybeSingle();
+  if (!project || project.is_demo) return null;
+
+  if (actor.type === "client") {
+    const access = await getClientTaskAccess(actor.id, task.id);
+    if (!access) return null;
+  }
+
+  return {
+    taskId: task.id,
+    taskTitle: task.title,
+    projectId: project.id,
+    clientId: project.client_id,
+    commentId: resolvedCommentId,
+  };
+}
+
+async function notifyOpposite(
+  actor: Actor,
+  context: AttachmentContext,
+  fileName: string,
+) {
+  const admin = createAdminClient();
+
+  if (actor.type === "admin") {
+    await admin.from("notifications").insert({
+      recipient_type: "client",
+      recipient_id: context.clientId,
+      type: "file",
+      title: "Новый файл",
+      body: fileName,
+      task_id: context.taskId,
+      project_id: context.projectId,
+    });
+    return;
+  }
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("role", "admin")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (profile) {
+    await admin.from("notifications").insert({
+      recipient_type: "admin",
+      recipient_id: profile.id,
+      type: "file",
+      title: "Клиент загрузил файл",
+      body: fileName,
+      task_id: context.taskId,
+      project_id: context.projectId,
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) {
     return jsonError("Неверный origin запроса", 403);
   }
 
-  const user = await getCurrentAdmin();
-  if (!user) {
-    return jsonError("Нужен вход админа", 401);
+  const actor = await getActor();
+  if (!actor) {
+    return jsonError("Нужен вход", 401);
   }
 
-  if (!rateLimit(`upload:${user.id}`, 20, 60_000)) {
+  if (!rateLimit(`upload:${actor.type}:${actor.id}`, 20, 60_000)) {
     return jsonError("Слишком много загрузок. Попробуйте позже.", 429);
   }
 
@@ -59,45 +159,51 @@ export async function POST(request: NextRequest) {
 
   const file = formData.get("file");
   const taskIdRaw = formData.get("taskId");
-  const taskId =
-    typeof taskIdRaw === "string" ? taskIdRaw : "";
+  const commentIdRaw = formData.get("commentId");
+  const taskId = typeof taskIdRaw === "string" ? taskIdRaw : "";
+  const commentId = typeof commentIdRaw === "string" ? commentIdRaw : "";
 
   if (!(file instanceof File)) {
     return jsonError("Файл не передан", 400);
   }
-  if (!z.string().uuid().safeParse(taskId).success) {
+  if (Boolean(taskId) === Boolean(commentId)) {
+    return jsonError("Нужно указать задачу или комментарий", 400);
+  }
+  if (taskId && !z.string().uuid().safeParse(taskId).success) {
     return jsonError("Некорректная задача", 400);
+  }
+  if (commentId && !z.string().uuid().safeParse(commentId).success) {
+    return jsonError("Некорректный комментарий", 400);
+  }
+
+  const context = await resolveContext(
+    actor,
+    taskId || null,
+    commentId || null,
+  );
+  if (!context) {
+    return jsonError("Нет доступа к задаче или комментарию", 404);
   }
 
   const admin = createAdminClient();
+  const countQuery = context.commentId
+    ? admin
+        .from("attachments")
+        .select("id", { count: "exact", head: true })
+        .eq("comment_id", context.commentId)
+    : admin
+        .from("attachments")
+        .select("id", { count: "exact", head: true })
+        .eq("task_id", context.taskId);
 
-  const { data: task } = await admin
-    .from("tasks")
-    .select("id, project_id, title")
-    .eq("id", taskId)
-    .maybeSingle();
-
-  if (!task) {
-    return jsonError("Задача не найдена", 404);
-  }
-
-  const { data: project } = await admin
-    .from("projects")
-    .select("id, client_id, is_demo")
-    .eq("id", task.project_id)
-    .maybeSingle();
-
-  if (!project || project.is_demo) {
-    return jsonError("В демо-задачу нельзя загружать файлы", 400);
-  }
-
-  const { count } = await admin
-    .from("attachments")
-    .select("id", { count: "exact", head: true })
-    .eq("task_id", taskId);
-
+  const { count } = await countQuery;
   if ((count ?? 0) >= MAX_ATTACHMENTS) {
-    return jsonError("К задаче уже прикреплено 4 файла", 400);
+    return jsonError(
+      context.commentId
+        ? "К комментарию уже прикреплено 4 файла"
+        : "К задаче уже прикреплено 4 файла",
+      400,
+    );
   }
 
   const validated = await validateUpload(file);
@@ -105,7 +211,8 @@ export async function POST(request: NextRequest) {
     return jsonError(validated.error, 400);
   }
 
-  const storagePath = `${taskId}/${randomUUID()}.${validated.extension}`;
+  const base = context.commentId ?? context.taskId;
+  const storagePath = `${base}/${randomUUID()}.${validated.extension}`;
   const bucket = admin.storage.from("attachments");
 
   const { error: uploadError } = await bucket.upload(
@@ -124,10 +231,10 @@ export async function POST(request: NextRequest) {
   const { data: attachment, error: insertError } = await admin
     .from("attachments")
     .insert({
-      task_id: taskId,
-      comment_id: null,
-      uploaded_by_type: "admin",
-      uploaded_by_name: user.email ?? "Админ",
+      task_id: context.commentId ? null : context.taskId,
+      comment_id: context.commentId,
+      uploaded_by_type: actor.type,
+      uploaded_by_name: actor.name,
       file_name: validated.displayName,
       mime_type: validated.mimeType,
       size_bytes: validated.sizeBytes,
@@ -152,26 +259,17 @@ export async function POST(request: NextRequest) {
     }),
   ]);
 
-  if (project.client_id) {
-    await admin.from("notifications").insert({
-      recipient_type: "client",
-      recipient_id: project.client_id,
-      type: "file",
-      title: "Новый файл",
-      body: validated.displayName,
-      task_id: taskId,
-      project_id: project.id,
-    });
-  }
+  await notifyOpposite(actor, context, validated.displayName);
 
   await writeAudit({
-    actorType: "admin",
-    actorName: user.email ?? "Админ",
+    actorType: actor.type,
+    actorName: actor.name,
     action: "file.upload",
     entityType: "attachment",
     entityId: attachment.id,
     payload: {
-      taskId,
+      taskId: context.taskId,
+      commentId: context.commentId,
       fileName: validated.displayName,
       mimeType: validated.mimeType,
       sizeBytes: validated.sizeBytes,
@@ -195,12 +293,12 @@ export async function DELETE(request: NextRequest) {
     return jsonError("Неверный origin запроса", 403);
   }
 
-  const user = await getCurrentAdmin();
-  if (!user) {
-    return jsonError("Нужен вход админа", 401);
+  const actor = await getActor();
+  if (!actor) {
+    return jsonError("Нужен вход", 401);
   }
 
-  if (!rateLimit(`delete-file:${user.id}`, 30, 60_000)) {
+  if (!rateLimit(`delete-file:${actor.type}:${actor.id}`, 30, 60_000)) {
     return jsonError("Слишком много запросов. Попробуйте позже.", 429);
   }
 
@@ -219,12 +317,31 @@ export async function DELETE(request: NextRequest) {
   const admin = createAdminClient();
   const { data: attachment } = await admin
     .from("attachments")
-    .select("id, storage_path, file_name, task_id, comment_id")
+    .select(
+      "id, task_id, comment_id, storage_path, file_name, uploaded_by_type",
+    )
     .eq("id", parsed.data)
     .maybeSingle();
 
   if (!attachment) {
     return jsonError("Вложение не найдено", 404);
+  }
+
+  const context = await resolveContext(
+    actor,
+    attachment.task_id,
+    attachment.comment_id,
+  );
+
+  if (!context) {
+    return jsonError("Нет доступа к вложению", 404);
+  }
+
+  if (
+    actor.type === "client" &&
+    attachment.uploaded_by_type !== "client"
+  ) {
+    return jsonError("Клиент может удалять только свои файлы", 403);
   }
 
   const bucket = admin.storage.from("attachments");
@@ -243,14 +360,14 @@ export async function DELETE(request: NextRequest) {
   }
 
   await writeAudit({
-    actorType: "admin",
-    actorName: user.email ?? "Админ",
+    actorType: actor.type,
+    actorName: actor.name,
     action: "file.delete",
     entityType: "attachment",
     entityId: attachment.id,
     payload: {
-      taskId: attachment.task_id,
-      commentId: attachment.comment_id,
+      taskId: context.taskId,
+      commentId: context.commentId,
       fileName: attachment.file_name,
     },
   });

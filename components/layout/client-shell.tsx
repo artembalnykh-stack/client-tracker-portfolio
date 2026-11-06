@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { clientLogoutAction } from "@/app/client/logout/actions";
@@ -24,6 +25,7 @@ export function ClientShell({
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {client.name}
             </span>
+            <NotificationBell />
             <ThemeToggle />
             <form action={clientLogoutAction}>
               <Button type="submit" variant="ghost" size="sm">

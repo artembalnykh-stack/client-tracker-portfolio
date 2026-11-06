@@ -98,15 +98,16 @@
 - [x] Финальный seed — `supabase/seed.sql` (6 статусов + 2 демо-проекта,
   12 задач, 3 пина); dev-seed отдельно.
 - [x] `npm run verify`, `npm run verify:build` — зелёные.
-- [ ] Задеплоить на Vercel: нужен GitHub-репозиторий, env и домен.
+- [x] GitHub: `https://github.com/artembalnykh-stack/client-tracker-portfolio`,
+  ветка `main` запушена.
+- [ ] Vercel: импорт репозитория, 6 env, домен `neyrocontent.ru`.
 
 ## Stage 5 — гейт
 
-Код и документация готовы. Деплой не выполнен: в окружении нет
-GitHub-репозитория и авторизованного Vercel CLI. Нужны действия владельца:
+Код, документация и GitHub-репозиторий готовы. Остался Vercel:
 
-1. Создать GitHub-репозиторий и запушить `main`.
-2. Импортировать в Vercel, задать 6 env из `.env.example`.
+1. Импортировать `artembalnykh-stack/client-tracker-portfolio`.
+2. Задать 6 env из `.env.example`; `NEXT_PUBLIC_SITE_URL=https://neyrocontent.ru`.
 3. Vercel → Domains → `neyrocontent.ru`; DNS в Reg.ru.
 4. Проверить `/api/health`, `/demo`, cron.
 

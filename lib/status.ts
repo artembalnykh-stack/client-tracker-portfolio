@@ -63,6 +63,10 @@ export function statusLabel(code: string): string {
   return isStatusCode(code) ? STATUS_META[code].label : code;
 }
 
+export function statusColor(code: string): string {
+  return isStatusCode(code) ? STATUS_META[code].color : "#64748b";
+}
+
 export function canClientTransition(from: string, to: string): boolean {
   if (!isStatusCode(from) || !isStatusCode(to)) return false;
   return CLIENT_TRANSITIONS[from]?.includes(to) ?? false;

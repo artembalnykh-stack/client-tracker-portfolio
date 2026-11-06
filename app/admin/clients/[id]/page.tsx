@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, FolderKanban, Mail } from "lucide-react";
 import { InvitePanel } from "@/app/admin/clients/[id]/invite-panel";
+import { CreateProjectForm } from "@/app/admin/clients/[id]/create-project-form";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
@@ -86,7 +87,7 @@ export default async function ClientDetailPage({
             <CardContent>
               {projects.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Проектов пока нет. Создание проектов и задач — Stage 3.
+                  Проектов пока нет. Создайте первый ниже.
                 </p>
               ) : (
                 <ul className="divide-y divide-border/60">
@@ -102,6 +103,11 @@ export default async function ClientDetailPage({
                   ))}
                 </ul>
               )}
+
+              <div className="mt-4 border-t border-border/60 pt-4">
+                <p className="mb-3 text-sm font-medium">Новый проект</p>
+                <CreateProjectForm clientId={client.id} />
+              </div>
             </CardContent>
           </Card>
         </div>

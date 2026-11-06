@@ -19,3 +19,7 @@ export function isPriority(value: string): value is Priority {
 export function priorityLabel(value: string): string {
   return isPriority(value) ? PRIORITY_META[value].label : value;
 }
+
+export function priorityColor(value: string): string {
+  return isPriority(value) ? PRIORITY_META[value].color : "#64748b";
+}

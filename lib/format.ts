@@ -23,3 +23,17 @@ export function formatDateTime(value: string | Date | null | undefined): string 
     timeZone: "Europe/Moscow",
   }).format(date);
 }
+
+export function todayInMoscow(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Europe/Moscow",
+  }).format(new Date());
+}
+
+export function isOverdue(deadline: string | null | undefined): boolean {
+  if (!deadline) return false;
+  return deadline < todayInMoscow();
+}

@@ -67,6 +67,7 @@ npm run dev
 
 ```bash
 curl -s http://localhost:3000/api/health
+# в dev дополнительно будут keyFormat, projectRef, urlPath
 # {"ok":true,"db":true,"storage":true,"statuses":6}
 ```
 
@@ -76,8 +77,18 @@ curl -s http://localhost:3000/api/health
 - `storage:false` — bucket `attachments` не создан;
 - `statuses` не 6 — не применён `seed.sql` или миграция прервалась.
 
+В dev `/api/health` также отдаёт `keyFormat`, `projectRef`, `urlPath` и
+`dbError`/`storageError`. В production этих полей нет.
+
 ## 7. Ошибки
 
+- **`PGRST125 Invalid path specified in request URL`** — в
+  `NEXT_PUBLIC_SUPABASE_URL` указан REST-эндпоинт (`.../rest/v1/`). Нужен
+  **Project URL** без пути: `https://<ref>.supabase.co`. В health `urlPath`
+  должен быть `/`, а не `/rest/v1/`.
+- **`keyFormat: "sb_publishable"`** — в `SUPABASE_SERVICE_ROLE_KEY` лежит
+  publishable/anon-ключ. Нужен secret key (`sb_secret_...`) или legacy
+  `service_role`. С `anon` health покажет `statuses:0`, `storage:false`.
 - **`relation "..." does not exist`** — миграция не применена или применена
   частично; выполни `reset.sql` (только dev), затем миграцию снова.
 - **`permission denied for table ...`** — проверь, что SQL Editor выполняет

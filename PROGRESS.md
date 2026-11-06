@@ -1,10 +1,10 @@
 # Прогресс разработки: Neyroflow
 
-**Текущий статус:** Stage 1 — код готов, ждём применения SQL и `.env.local`  
+**Текущий статус:** Stage 1 принят, готов к Stage 2  
 **Последнее обновление:** 06.11.2026
 
 - [x] Stage 0: каркас Next.js 16, документы, skills, проверки
-- [ ] Stage 1: БД, RLS, seed, тема, layout, health — **код готов, нужен гейт**
+- [x] Stage 1: БД, RLS, seed, тема, layout, health — **принят**
 - [ ] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты
 - [ ] Stage 3: админка, канбан, файлы, уведомления, аудит
 - [ ] Stage 4: пины, клиентский портал, демо
@@ -30,23 +30,16 @@
 - [x] `docs/SCHEMA.md`, `docs/SUPABASE-SETUP.md`.
 - [x] `npm run verify`, `npm run verify:build` — зелёные.
 
-## Stage 1 — нужен твой гейт
+## Stage 1 — гейт пройден
 
-1. Применить `supabase/migrations/0001_init.sql` в Supabase SQL Editor.
-2. Применить `supabase/seed.sql`; при желании — `supabase/seed.dev.sql`.
-3. Authentication → Email включить, **Allow new users to sign up** выключить;
-   создать админа в Users.
-4. Заполнить `.env.local` (не присылать значения):
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `CLIENT_SESSION_SECRET`, `CRON_SECRET`,
-   `NEXT_PUBLIC_SITE_URL=http://localhost:3000`.
-5. Запустить `npm run dev` в своём терминале.
-6. Проверить `http://localhost:3000/api/health` → `ok: true`.
-7. Написать «Этап 1 принят» — проверю health, тему и закоммичу гейт.
+- `statuses: 6`, `buckets: 1`, `profiles: 1` в Supabase SQL Editor.
+- `/api/health` → `ok:true, db:true, storage:true, statuses:6`.
+- Тёмная и светлая темы проверены через dsh-pilot: переключение работает,
+  console errors нет.
+- Причина первого `PGRST125`: в `NEXT_PUBLIC_SUPABASE_URL` был `/rest/v1/`;
+  исправлено на Project URL. Задокументировано в `docs/SUPABASE-SETUP.md`.
 
-Подробная инструкция — `docs/SUPABASE-SETUP.md`.
-
-## Stage 2 — после гейта
+## Stage 2 — следующий шаг
 
 Лендинг с CSS-изометрией, логотипы, `/login`, защита `/admin` через `proxy.ts`,
 клиенты/инвайты, `/invite`, тема.
@@ -66,3 +59,6 @@
 - `shadcn` 4.23 использует стиль `base-nova` и пакет `cn`; не удалять
   `@import "shadcn/tailwind.css"` из `globals.css`.
 - Демо-картинки: `public/demo-assets/*.jpg`, размеры в seed совпадают с файлами.
+- `NEXT_PUBLIC_SUPABASE_URL` — только Project URL (`https://<ref>.supabase.co`),
+  без `/rest/v1`; иначе PostgREST отдаёт `PGRST125`. Health в dev показывает
+  `urlPath`, `keyFormat`, `projectRef` — в production этих полей нет.

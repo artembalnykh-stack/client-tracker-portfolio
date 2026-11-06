@@ -74,7 +74,7 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | публичный ключ Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | только сервер: Storage, клиентский портал, демо, cron |
 | `CLIENT_SESSION_SECRET` | подпись `client_session` (HS256) |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` локально, `https://neyrocontent.ru` в проде |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` локально, `https://client-tracker-portfolio.neyrocontent.ru` в проде |
 | `CRON_SECRET` | Bearer-токен для `/api/cron/deadlines` |
 
 Секреты `CLIENT_SESSION_SECRET` и `CRON_SECRET` генерируются владельцем:
@@ -136,30 +136,31 @@ erDiagram
    Framework Preset: **Next.js**; Node.js **26.x**.
 3. **Settings → Environment Variables** — добавить все шесть переменных из
    `.env.example` с production-значениями. Для `NEXT_PUBLIC_SITE_URL`:
-   `https://neyrocontent.ru`.
+   `https://client-tracker-portfolio.neyrocontent.ru`.
 4. Deploy. `vercel.json` включает cron `/api/cron/deadlines` по расписанию
    `0 6 * * *` UTC = **09:00 МСК**. В Vercel должен быть задан `CRON_SECRET`;
    Vercel отправляет его как `Authorization: Bearer <CRON_SECRET>`.
 5. Supabase → Authentication → URL Configuration: добавить
-   `https://neyrocontent.ru` в Site URL / Redirect URLs.
+   `https://client-tracker-portfolio.neyrocontent.ru` в Site URL / Redirect URLs.
 6. Проверить `/api/health`, `/demo`, вход админа и инвайт клиента.
 
-### Домен `neyrocontent.ru` (Reg.ru)
+### Поддомен `client-tracker-portfolio.neyrocontent.ru` (Reg.ru)
 
-1. Vercel → Project → **Settings → Domains → Add** → `neyrocontent.ru` и
-   `www.neyrocontent.ru`.
-2. Vercel покажет точные DNS-значения. Для apex обычно:
+Основной `neyrocontent.ru` и его `www` **не трогаем** — они используются
+другими проектами. Для трекера — отдельный поддомен:
 
-   | Тип | Имя | Значение |
+1. Vercel → Project → **Settings → Domains → Add** →
+   `client-tracker-portfolio.neyrocontent.ru`.
+2. Vercel покажет точное значение CNAME. В Reg.ru уже есть запись:
+
+   | Тип | Subdomain | Canonical name |
    |---|---|---|
-   | A | `@` | `76.76.21.21` |
-   | CNAME | `www` | `cname.vercel-dns.com` |
+   | CNAME | `client-tracker-portfolio` | `cname.vercel-dns.com` или значение из Vercel |
 
-   **Берите значения из Vercel** — они могут отличаться.
-3. В Reg.ru → Домены → DNS-серверы и зоны: добавить записи, удалить
-   конфликтующие A/CNAME, TTL 3600.
-4. Дождаться проверки в Vercel (до 24–48 часов).
-5. Fallback-адрес: `https://neyrocontent.vercel.app`.
+   Меняем **только эту запись**, если Vercel требует другое значение.
+   A-запись `@` и CNAME `www` не трогаем.
+3. Дождаться Valid и SSL в Vercel.
+4. Fallback-адрес: `https://client-tracker-portfolio.vercel.app`.
 
 Подробнее: [docs/DEPLOY.md](docs/DEPLOY.md).
 

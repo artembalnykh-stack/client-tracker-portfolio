@@ -148,7 +148,9 @@ TypeScript 5.9.3 выбран вместо 7.0.2, потому что `eslint-co
 
 - Vercel, Node 26.x; локально допустим Node ≥22.
 - Cron `/api/cron/deadlines`: `0 6 * * *` UTC = 09:00 МСК, `CRON_SECRET`.
-- Домен: apex `neyrocontent.ru`; fallback `neyrocontent.vercel.app`.
+- Домен трекера: `client-tracker-portfolio.neyrocontent.ru`; apex
+  `neyrocontent.ru` и `www` заняты другими проектами и не меняются.
+  Fallback: `client-tracker-portfolio.vercel.app`.
 - Один владелец на инсталляцию. Передача: репозиторий + Vercel + Supabase +
   домен; новый владелец создаёт Supabase Auth-пользователя, заполняет env;
   старый админ удаляется, секреты ротируются.

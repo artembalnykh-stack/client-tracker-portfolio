@@ -104,16 +104,19 @@
   `/api/health` → 200 (`db/storage/statuses: 6`), `/demo` → 200.
 - [x] Вход админа на live проверен пользователем.
 - [x] Node runtime: `26.x` (Vercel предупреждал об устаревании 22.x).
-- [ ] Домен `neyrocontent.ru`, DNS Reg.ru, `NEXT_PUBLIC_SITE_URL` на домен.
+- [ ] Поддомен `client-tracker-portfolio.neyrocontent.ru`, DNS Reg.ru,
+  `NEXT_PUBLIC_SITE_URL` на поддомен. Apex и `www` не трогаем.
 
 ## Stage 5 — гейт
 
 Live-проверка пройдена: health 200, demo 200, вход админа работает.
 Остался только домен:
 
-1. Vercel → Domains → `neyrocontent.ru` и `www`.
-2. Reg.ru DNS по значениям Vercel.
-3. Поменять `NEXT_PUBLIC_SITE_URL` на `https://neyrocontent.ru`, Redeploy.
+1. Vercel → Domains → `client-tracker-portfolio.neyrocontent.ru`.
+2. Reg.ru: CNAME `client-tracker-portfolio` по значению Vercel; `@`/`www`
+   не трогаем.
+3. Поменять `NEXT_PUBLIC_SITE_URL` на
+   `https://client-tracker-portfolio.neyrocontent.ru`, Redeploy.
 4. Supabase Auth URL Configuration → домен.
 5. Проверить `/api/health`, `/demo`, cron; Stage 5 → 100%.
 

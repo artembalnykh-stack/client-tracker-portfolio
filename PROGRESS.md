@@ -1,11 +1,11 @@
 # Прогресс разработки: Neyroflow
 
-**Текущий статус:** Stage 2 — код готов, ждём проверки инвайта и входа админа  
+**Текущий статус:** Stage 2 принят, готов к Stage 3  
 **Последнее обновление:** 06.11.2026
 
 - [x] Stage 0: каркас Next.js 16, документы, skills, проверки
 - [x] Stage 1: БД, RLS, seed, тема, layout, health — **принят**
-- [ ] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты — **код готов**
+- [x] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты — **принят**
 - [ ] Stage 3: админка, канбан, файлы, уведомления, аудит
 - [ ] Stage 4: пины, клиентский портал, демо
 - [ ] Stage 5: деплой, README, DNS, финальный seed
@@ -24,13 +24,14 @@
 - [x] Тёмная/светлая темы проверены на лендинге, console errors нет.
 - [x] `npm run verify`, `npm run verify:build` — зелёные.
 
-## Stage 2 — нужен гейт
+## Stage 2 — гейт пройден
 
-1. Применить `supabase/seed.dev.sql` (2 тестовых клиента, ссылки:
-   `/invite?token=dev-client-a-token` и `...b-token`).
-2. Войти на `/login` своим паролем админа; проверить `/admin` и
-   `/admin/clients`.
-3. Написать «Этап 2 принят» — проверю инвайт A/B и закоммичу гейт.
+- Пользователь вошёл админом, проверил `/admin` и `/admin/clients`.
+- Dev-инвайты A/B: вход в портал, список своих проектов, выход.
+- Изоляция: A не видит проект B и наоборот (прямой URL → 404).
+- Найден и исправлен баг: `inviteTokenSchema` требовал 20 символов, а dev-токены
+  `dev-client-a-token` / `dev-client-b-token` — 18. Минимум снижен до 16.
+- Лендинг проверен в dark/light, console errors нет.
 
 ## Stage 3 — следующий шаг
 
@@ -55,3 +56,5 @@
 - `NEXT_PUBLIC_SUPABASE_URL` — только Project URL (`https://<ref>.supabase.co`),
   без `/rest/v1`; иначе PostgREST отдаёт `PGRST125`. Health в dev показывает
   `urlPath`, `keyFormat`, `projectRef` — в production этих полей нет.
+- Инвайт-токен: `inviteTokenSchema` минимум 16 символов; dev-токены длиной 18.
+  Не поднимать минимум выше 16, иначе `seed.dev.sql` перестанет работать.

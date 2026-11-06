@@ -11,4 +11,4 @@ export const clientCreateSchema = z.object({
   email: optionalEmail,
 });
 
-export const inviteTokenSchema = z.string().min(20).max(200);
+export const inviteTokenSchema = z.string().min(16).max(200);

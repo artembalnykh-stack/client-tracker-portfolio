@@ -164,6 +164,14 @@ erDiagram
 
 Подробнее: [docs/DEPLOY.md](docs/DEPLOY.md).
 
+## Передача заказчику
+
+Коротко: ZIP с GitHub — только backup. Для рабочего продукта передаются
+GitHub, Vercel, Supabase и Reg.ru; затем создаётся новый админ, удаляется
+старый и ротируются ключи.
+
+Пошаговая инструкция: [docs/CLIENT-HANDOFF.md](docs/CLIENT-HANDOFF.md).
+
 ## Проверки
 
 ```bash

@@ -1,6 +1,6 @@
 # Прогресс разработки: Neyroflow
 
-**Текущий статус:** Stage 5: live на Vercel, остался домен  
+**Текущий статус:** 100% — продукт задеплоен и готов к передаче  
 **Последнее обновление:** 07.11.2026
 
 - [x] Stage 0: каркас Next.js 16, документы, skills, проверки
@@ -8,7 +8,7 @@
 - [x] Stage 2: лендинг, логотип, Supabase Auth, клиенты и инвайты — **принят**
 - [x] Stage 3: админка, канбан, файлы, уведомления, аудит — **принят**
 - [x] Stage 4: пины, клиентский портал, демо — **принят**
-- [ ] Stage 5: CSS-3D, деплой, README, DNS, финальный seed — **live, домен ждёт**
+- [x] Stage 5: CSS-3D, деплой, README, DNS, финальный seed — **готово**
 
 ## Stage 3a — доска и задачи
 
@@ -104,25 +104,18 @@
   `/api/health` → 200 (`db/storage/statuses: 6`), `/demo` → 200.
 - [x] Вход админа на live проверен пользователем.
 - [x] Node runtime: `26.x` (Vercel предупреждал об устаревании 22.x).
-- [ ] Поддомен `client-tracker-portfolio.neyrocontent.ru`, DNS Reg.ru,
-  `NEXT_PUBLIC_SITE_URL` на поддомен. Apex и `www` не трогаем.
+- [x] Поддомен `client-tracker-portfolio.neyrocontent.ru`: DNS Reg.ru,
+  Vercel Domains, `NEXT_PUBLIC_SITE_URL`, SSL.
+- [x] `docs/CLIENT-HANDOFF.md` — простая инструкция передачи заказчику
+  (GitHub/Vercel/Supabase/Reg.ru, ротация ключей, чек-лист).
 
-## Stage 5 — гейт
+## Stage 5 — гейт пройден
 
-Live-проверка пройдена: health 200, demo 200, вход админа работает.
-Остался только домен:
+Live: `https://client-tracker-portfolio.neyrocontent.ru` — health 200,
+demo 200, вход админа работает. Apex и `www` не тронуты.
 
-1. Vercel → Domains → `client-tracker-portfolio.neyrocontent.ru`.
-2. Reg.ru: CNAME `client-tracker-portfolio` по значению Vercel; `@`/`www`
-   не трогаем.
-3. Поменять `NEXT_PUBLIC_SITE_URL` на
-   `https://client-tracker-portfolio.neyrocontent.ru`, Redeploy.
-4. Supabase Auth URL Configuration → домен.
-5. Проверить `/api/health`, `/demo`, cron; Stage 5 → 100%.
-
-Cron ищется в Vercel: **Deployments → последний деплой → Deployment
-Summary** (раздел Cron Jobs/Schedules) или Project → **Schedules** в новом UI.
-Маршрут `/api/cron/deadlines` уже отдаёт 401 без Bearer — значит, live.
+Cron: `/api/cron/deadlines` live, без Bearer — 401; расписание в
+`vercel.json` (`0 6 * * *` UTC = 09:00 МСК).
 
 ## Stage 2 — сделано
 

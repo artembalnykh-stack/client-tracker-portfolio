@@ -213,8 +213,8 @@ supabase/           миграция, seed, dev seed, cleanup, reset
 
 ## Референс и скриншоты
 
-- `reference.jpg` / `docs/reference.jpg` — настроение, не буквальное
-  копирование. CSS-3D hero без WebGL и внешних 3D-ассетов.
+- `docs/reference.jpg` — настроение, не буквальное копирование. CSS-3D hero
+  без WebGL и внешних 3D-ассетов.
 - Скриншоты: [docs/screenshots](docs/screenshots).
 
 ## Лицензия

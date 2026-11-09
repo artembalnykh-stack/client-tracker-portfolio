@@ -64,7 +64,7 @@ npm_config_cache=.npm-cache npm install --ignore-scripts --no-audit --no-fund
 npm run dev
 ```
 
-Открыть `http://localhost:3000`.
+Открыть `https://client-tracker-portfolio.neyrocontent`.
 
 ### Переменные окружения
 
